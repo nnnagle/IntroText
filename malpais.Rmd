@@ -1,0 +1,281 @@
+---
+title: "tree_ring.Rmd"
+author: "Nicholas N. Nagle"
+date: "December 30, 2014"
+output: pdf_document
+---
+
+
+```{r load, message=FALSE, warning=FALSE, results='hide', echo=FALSE}
+library(dplR)
+library(ggplot2)
+library(reshape2)
+if(!file.exists('nm580.crn'))
+  download.file('http://www1.ncdc.noaa.gov/pub/data/paleo/treering/chronologies/northamerica/usa/nm580.crn', 'nm580.crn')
+
+nm580.crn <- read.crn('nm580.crn')
+
+if(!file.exists('nm580.rwl'))
+  download.file('http://www1.ncdc.noaa.gov/pub/data/paleo/treering/measurements/northamerica/usa/nm580.rwl', 'nm580.rwl')
+nm580.rwl <- read.rwl('nm580.rwl')
+
+
+
+```
+
+
+Figure XX shows two pairs of two trees.  These trees were selected for view because they happened to be born and die at about the same time.  There are actually `r nrow(nm580.rwl)` trees. In developing tree ring chronologies, it is important that the lives of the trees overlap each other without any gaps, a feature that is not shown here.  From these pairs of trees, we notice a couple of features about the growth of trees.  First, early tree rings are very wide and get narrower as the tree ages.  This fact is independent of the climate conditions.  The second feature to note is that, despite this general narrowing of rings, there is a lot of variation above and below this trend.  Furthermore, these variations are shared by trees.  When one tree grow faster than expected, the other tree does as well.  Thus, these variations - at least in part - are due to factors that are shared by all trees.
+
+```{r, results='hide', echo=FALSE}
+# It will help (visually) to find two series that are similar
+# Return a correlation matrix
+cormat <- cor(nm580.rwl, use='pairwise.complete.obs')
+# Return a matrix with number of pairs
+not.missing <- data.matrix(sapply(nm580.rwl, function(x) as.numeric(!is.na(x))))
+pairmat <- t(not.missing) %*% not.missing
+# set diags to zero... they are irrelevant
+diag(pairmat) <- 0
+# Use pairmat as a filter to select series with high correlations and high overlaps...
+cormat[pairmat<300] <- 0 # only look for series with 300 year overlaps...
+# Nifty helper function
+ind2sub <- function(mat, ind){
+  m <- dim(mat)[1]
+  r <- ((ind-1) %% m) + 1
+  c <- floor((ind-1) / m) + 1
+  return(c(r,c))
+}
+which(cormat>.9)
+sapply(which(cormat>.9), function(x) ind2sub(cormat,x))
+# it looks like the 16th and 17th trees are similar...
+nm580.ggp <- cbind(year=as.numeric(row.names(nm580.rwl)), nm580.rwl[,c(33, 34, 35, 36)])
+
+nm580.ggp <- melt(nm580.ggp, id.vars='year', variable.name='tree', value.name='rwl')
+nm580.ggp <- subset(nm580.ggp, !is.na(rwl))
+ggplot(data=nm580.ggp, aes(x=year, y=rwl, color=tree))+geom_line()
+```
+
+Based on these empirical facts, we hypothesize the following model for ring width length (rwl) of the $i$-th tree at time $t$:
+$$ \mbox{rwl}_{it} = f(\mbox{year}_{it}) \times r_{it}$$
+where $f(\mbox{year}_{it})$ is some function that models he declining ring width as the tree ages, and $r_{it}$ is the *residual*, Thus, the residual $r_{it}$ carries information about the climate conditions affecting the tree that year.  If we've done everything properly, then the functional part $f(\mbox{year}_{it})$ should not carry any information about the climate.  The function we will use is an exponential growth model, and we will find the exact curve using a method called "least squares" (more on this in Chapter 3).  The resulting growth models are shown in Figure XX.  Each curve measures what we expect tree ring size to be, apart from any other climatic or other random variation.
+
+```{r, echo=FALSE}
+#nm580.rwi <- detrend(nm580.rwl, method='Spline', verbose=TRUE)
+nm580.rwi <- detrend(nm580.rwl, method='ModNegExp', verbose=FALSE, constrain.modnegexp='always')
+
+```
+
+
+```{r, echo=FALSE}
+# Calculate the spline value... which can be backed out from the length and the index
+nm580.rws <- as.data.frame(mapply(function(x,y) x/y,nm580.rwl, nm580.rwi))
+
+nm580.ggp <- cbind(year=as.numeric(row.names(nm580.rwi)), nm580.rws[,c(33, 34, 35, 36)])
+
+nm580.ggp <- melt(nm580.ggp, id.vars='year', variable.name='tree', value.name='rwl')
+nm580.ggp <- subset(nm580.ggp, !is.na(rwl))
+nm580.ggp[which(nm580.ggp$rwl==0), 'rwl'] <- NA
+ggplot(data=nm580.ggp, aes(x=year, y=rwl, color=tree))+geom_line()+scale_y_continuous(limits=c(0, 1.1))
+
+```
+
+The residual series are shown Figure XX.  A value of 1.5 means that the tree grew 1.5 times as much as expected that year, and a value of .5 means that the tree grew 0.5 times as expected.  
+
+Comparing within each pair of trees we can tell that there is both *signal* and *noise* in the residuals. Each pair of trees seem to be tracking some common trend.  For example, trees CRE51A and CRE51B both had less than average growth during the 8th century and above averate growth in the 11th century.    This is the type of signal we are looking for.  But yet, there is also noise.  The index values are not identical between trees.  Despite the similarities, there are also differences that can not represent local climate.  Who knows what causes these tree-to-tree variations?  Maybe a trees roots discovered a pocket of soil with higher retention?  Maybe the tree was partially shaded during that period?  Maybe some bugs started munching on it's bark that year.  Maybe the tree tree fruited particularly heavily that year.  Maybe it's due to varying shrinkage of the tree core as it dried after collection.  Who knows?  But its not important for our inquiry.  We are interested in the ability for trees to measure *common* and *shared* climate factors.  One way to remove these idiosyncratic, tree-to-tree differences is to calculate the sample average across all trees.  If we took the average value for each year, then it is reasonable that the average would carry information about the climate conditions that are shared by all trees, and the effect of tree-to-tree variation will be reduced or eliminated.  
+
+
+```{r, echo=FALSE}
+nm580.ggp <- cbind(year=as.numeric(row.names(nm580.rwi)), nm580.rwi[,c(33, 34, 35, 36)])
+
+nm580.ggp <- melt(nm580.ggp, id.vars='year', variable.name='tree', value.name='rwl')
+nm580.ggp <- subset(nm580.ggp, !is.na(rwl))
+ggplot(data=nm580.ggp, aes(x=year, y=rwl, color=tree))+geom_line()
+
+
+```
+
+The average, however, can be heavily influenced by a single extreme value.  Will this be a problem?  A histogram of all the rwi values shows that there are more very high values than there are very low values.  Due diligence leds us to ask, Do all trees look like this? or are some trees worse than others?  If some trees are worse than others, then maybe we should investigate the data for those trees to seem if somthing is amiss.  It would be a tedious task to show a histogram of all `r nrow(nm580.rwl)` trees, but we can get similar information from *boxplots* of each tree's residuals as in Figure XX.  Boxplots show both the range of typical values, as well as the extreme values.  Each tree has more or less the same sort of skewed distribution.  There's no reason to believe that any of the trees are particularly problematic based on this distribution.
+
+
+
+```{r}
+nm580.ggp <- melt(nm580.rwi, value.name='rwi')
+nm580.ggp$rwi[which(nm580.ggp$rwi==0)]<- NA
+ggplot(data=nm580.ggp, aes(x=rwi))+geom_histogram()
+```
+
+It appears that there are some large values.  Does it look like this for every tree?  It would be too much to look at histograms for each tree, but a bloxplot is a nuce summary of th evalues for each tree:
+```{r}
+nm580.ggp <- melt(nm580.rwi, value.name='rwi', variable.name='tree')
+nm580.ggp$rwi[which(nm580.ggp$rwi==0)]<- NA
+ggplot(data=nm580.ggp, aes(y=rwi, x=tree))+geom_boxplot()
+```
+
+Yes, every tree looks like this.
+
+What about every year?  We're going to be averaging by year.  Do they all look like this?
+
+```{r}
+nm580.ggp <- cbind(year=as.numeric(row.names(nm580.rwi)), nm580.rwi)
+nm580.ggp <- melt(nm580.ggp, value.name='rwi', variable.name='tree', id.vars='year')
+nm580.ggp$year <- factor(nm580.ggp$year, levels=as.numeric(row.names(nm580.rwi)))
+# Omit the first 1500 from the plot
+ggplot(data=subset(nm580.ggp, as.numeric(year)>1500), aes(y=rwi, x=year))+geom_boxplot() 
+```
+
+How much data are there each year?
+```{r}
+# remove NAs
+nm580.ggp <- cbind(year=as.numeric(row.names(nm580.rwi)), nm580.rwi)
+nm580.ggp <- melt(nm580.ggp, value.name='rwi', variable.name='tree', id.vars='year')
+nm580.ggp <- subset(nm580.ggp, !is.na(rwi))
+
+nm580.ggp <- dcast(nm580.ggp, year~., length, drop=FALSE)
+names(nm580.ggp) <- c('year','count')
+ggplot(data=nm580.ggp, aes(x=year, y=count))+geom_line()
+```
+We're dealing with a pretty small sample size before year 1400 or so, so there is good reason to be concerned about a sample mean with all the outliers.  We could use the median, because the median is robust to outliers, but it is a little known fact that the median cn be much worse than the mean in small samples.  What to do?  What to do?  If the choice were the mean or median, I would probably go with the mean because it is more intuitive for most people.  But the literature uses something called a robust mean, which a combination of the mean and median, and is beyond the subject of this text (see Appendix X).  In this case, they are very similar, and I don't see much reason to doubt the mean, 
+
+
+
+```{r}
+rwi.mean <- apply(nm580.rwi, 1, mean, na.rm=TRUE)
+rwi.median <- apply(nm580.rwi, 1, median, na.rm=TRUE)
+```
+
+We now have a proxy series!  Yay.
+
+
+## Correlating with precipitation.
+
+```{r}
+# Download the precip data
+if(!file.exists('pcp.txt'))
+  download.file('http://www1.ncdc.noaa.gov/pub/data/cirs/climdiv/climdiv-pcpndv-v1.0.0-20141219',
+                'pcp.txt')
+raw.precip <- read.table('pcp.txt',sep='')
+names(raw.precip) <- c('ID', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')
+# Data description is here: http://www1.ncdc.noaa.gov/pub/data/cirs/climdiv/divisional-readme.txt
+raw.precip$state <- substr(raw.precip$ID, 1, 2)
+raw.precip$div <- substr(raw.precip$ID, 3, 4)
+raw.precip$element <- substr(raw.precip$ID, 5, 6)
+raw.precip$year <- substr(raw.precip$ID, 7, 10)
+raw.precip <- subset(raw.precip, state=='29' & div=='04') # subset on new mexico=29, division=04
+
+data <- cbind(raw.precip[c('year', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')], 
+              stand_chron=rwi.mean[raw.precip$year])
+# Add on next year's chronology too
+data <- cbind(data,
+              stand_chron_next = rwi.mean[as.character(as.numeric(raw.precip$year)+1)])
+```
+
+Our assumption is that the ring width index is a proxy for climate, and in particular, for precipitation.  This needs evaluating:
+```{r}
+# Calculate monthly correlations for current year
+sapply(c('Jan', 'Feb','Mar','Apr','May','Jun','Jul','Aug','Nov','Dec'), 
+       function(x) cor(data[,'stand_chron'], data[,x], use='complete.obs'))
+# Calculate monthly correlations for previous year
+sapply(c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug', 'Sep', 'Oct', 'Nov', 'Dec'), 
+       function(x) cor(data[,'stand_chron_next'], data[,x], use='complete.obs'))
+
+```
+
+
+```{r}
+# Reshape the precip values to 
+library(reshape2)
+precip <- melt(raw.precip[,c('year', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')], 
+               id.vars = "year", value.name = "precip", variable.name="month")
+# The order is screwy.  We should sort by year, then month
+precip <- precip[order(precip$year, precip$month), ]
+library(zoo)
+# Grissino-Mayer uses previous July to current July.  this is a 13 month moving total
+precip$ma <- rollmean(precip$precip, k=13, fill = NA, align = "right") * 13
+# I multiplied by 12 to turn monthly average into  total.
+# Now extract the July values
+precip_yr <- subset(precip, month == "Jul" & !is.na(ma))
+names(precip_yr) <- c('year', 'month','Jul_precip', 'total_precip')
+row.names(precip_yr) <- precip_yr$year
+
+# Now create a new dataset with chronology and 
+data <- data.frame(stand_chron=rwi.mean)
+data$precip <- precip_yr[row.names(data), 'total_precip']
+with(data, cor(stand_chron, precip, use='complete.obs'))
+# That's a decent correlation.
+
+```
+
+Now regress the 
+```{r}
+summary(lm(precip~stand_chron, data=data))
+summary(lm(precip~stand_chron, data=subset(data, as.numeric(row.names(data))>1940)))
+```
+
+Now predict the past precipitation and plot
+```{r}
+lm.mod <- lm(precip~stand_chron, data=data)
+precip.past <- predict(lm.mod,newdata=data.frame(stand_chron=rwi.mean))
+
+# Now some eye candy
+precip.ggp <- data.frame(precip=precip.past, year=as.numeric(names(precip.past)))
+precip.ggp$pred <- precip.ggp$precip
+# replace the predicted with the actual precip after 1896
+precip.ggp$precip[precip.ggp$year>1895] <- data$precip[precip.ggp$year>1895]
+# Turn precip into standard units:
+precip.ggp$precip <- (precip.ggp$precip - mean(data$precip, na.rm=TRUE)) / sd(data$precip, na.rm=TRUE)
+precip.ggp$pred <- (precip.ggp$pred- mean(data$precip, na.rm=TRUE)) / sd(data$precip, na.rm=TRUE)
+
+# Create a ribbon plot to show above and below average periods.
+precip.ggp$p_hi <- pmax(0, precip.ggp$precip)
+precip.ggp$p_lo <- pmin(0, precip.ggp$precip)
+library(scales)
+ggplot(data=precip.ggp) + 
+  geom_ribbon(aes(x=year, ymin=0, ymax=p_hi), color=muted('blue'), fill=muted('blue'))+
+  geom_ribbon(aes(x=year, ymax=0, ymin=p_lo), color=muted('red'), fill=muted('red'))+
+  scale_x_continuous(limits=c(1900, 2010))
+
+lo <- loess(precip~year, precip.ggp, span=20/nrow(precip.ggp))
+precip.ggp$precip_lo <- predict(lo)
+precip.ggp$p_lo_hi <- pmax(0, precip.ggp$precip_lo)
+precip.ggp$p_lo_lo <- pmin(0, precip.ggp$precip_lo)
+# ggplot(data=precip.ggp) + 
+#   geom_ribbon(aes(x=year, ymin=0, ymax=p_lo_hi), color=muted('blue'), fill=muted('blue'))+
+#   geom_ribbon(aes(x=year, ymax=0, ymin=p_lo_lo), color=muted('red'), fill=muted('red'))+
+#   scale_x_continuous(limits=c(0000, 2010))+
+#   geom_ribbon(data=data.frame(x=c(1943, 1963), ymin=-100, ymax=100),
+#               aes(x=x, ymax=ymax, ymin=ymin), fill=muted('red'), alpha=.5) +
+#   geom_ribbon(data=data.frame(x=c(1271, 1299), ymin=-100, ymax=100),
+#               aes(x=x, ymax=ymax, ymin=ymin), fill=muted('red'), alpha=.5) +
+#   coord_cartesian(ylim=c(-2,2), xlim=c(1000,1200))
+
+
+# Find long runs:
+# create a function to add consecutive highs or lows, and reset after a sign shift
+temp <- precip.ggp$precip_lo
+pred.sign <- sign(precip.ggp$precip_lo)
+temp[1] <- 0
+for(t in 2:length(temp)){
+  temp[t] <- ifelse(pred.sign[t]==pred.sign[t-1], temp[t-1]+1, 0)}
+# work backward, replacing each value by the length of that run
+run_len <- temp
+for(t in rev(1:(length(temp)-1)))
+  run_len[t] <- ifelse(temp[t+1]>0, run_len[t+1], temp[t])
+# delete short run
+run_len[which(run_len<=19)] <- 0
+# mutiply by sign
+run_len <- run_len * pred.sign
+
+# Add to the dataframe so we can create ribbons from it
+precip.ggp$run_hi <- pmax(0, run_len)
+precip.ggp$run_lo <- pmin(0, run_len)
+
+ggplot(data=precip.ggp) + 
+  geom_ribbon(aes(x=year, ymin=0, ymax=p_lo_hi), color=muted('blue'), fill=muted('blue'))+
+  geom_ribbon(aes(x=year, ymax=0, ymin=p_lo_lo), color=muted('red'), fill=muted('red'))+
+  scale_x_continuous(limits=c(0000, 2010))+
+  geom_ribbon(aes(x=year, ymax=run_hi*100, ymin=-(100*run_hi)), fill=muted('blue'), alpha=.5)+
+  geom_ribbon(aes(x=year, ymin=run_lo*100, ymax=-(100*run_lo)), fill=muted('red'), alpha=.5)+
+  coord_cartesian(ylim=c(-1.5,1.5), xlim=c(1000, 1300))
+
+
+```
+The drought during the 1940s and 50s was certainly a bad drought.  But the climate reconstruction shows that it was by no means exceptional.  In fact, there appear to be many periods of both very long droughts as well as very long periods of above average rainfall.  

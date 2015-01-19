@@ -1,0 +1,55 @@
+---
+title: "Describing Relations: Correlation And Regression"
+author: "Nicholas N. Nagle"
+date: "November 17, 2014"
+documentclass: BYUTextbook
+header-includes:
+ - \usepackage{todonotes}
+ - \usepackage{mdframed}
+output: 
+  pdf_document:
+    template: default2.latex
+    keep_tex: true
+---
+
+
+## Correlation and causation
+Suppose I correlate the yearly performance of every company in the world with the performance of the San Francisco Giants baseball team.  Some companies are bound to be more correlated than others.  Should I invest in these companies whenver the Giants do will, and disinvest when the Giants do poorly?  If that company sells Giant's merchandise, than sure.  But if that company is a tea shop in Nepal, than surely not.  This is most likely a case of spurious correlation.
+
+## Gauss and regression
+
+
+## The regression line
+
+
+
+$$\underbrace{E[y_i|x_i]}_{\text{prediction}}=\underbrace{\beta_{0}}_{\text{intercept}} + \underbrace{\beta_{x}}_{\text{slope}}\underbrace{x_i}_{\text{data}}$$
+
+$E[y_i|x_i]$ The expected value of $y$, given the value of $x$.  "Tell me what $x$ is, and I'll tell you what the best guess of $y$ is, tell me how big was the tree ring that year ($x_i$), and I'll tell you the best guess for how much precipitation there was that year ($y_i$)."
+
+The parameters of the function are $\beta_0$ \outnote{$\beta_0$ is pronounced "beta-zero" or "beta-naught"} and $\beta_x$.  A line is completely charaerized by it's intercept $\beta_0$ and slope $\beta_x$.  We will estimate these, and the sample estimates are usually denoted by $\hat{beta}_0$ and $\hat{beta}_1$
+
+$$\underbrace{y_i}_{\text{actual data}} = \underbrace{E[y_i|x_i]}_{\text{prediction}} + \underbrace{e_i}_{\text{error}}$$
+$$y_i = \beta_0+\beta_x x_i + e_i$$
+
+There's nothing particularly special about a line, we could have any curvy function $y_i = f(x_i) + e_i$.
+
+It's not obvious, but the regression slope is like an average. A little bit of algebraic magic can show that the slope is equal to a weighted average of the slope between all pairs of points:
+$$\hat{\beta{x}}=\sum_i \sum_j w_{ij}\frac{y_i-y_j}{x_i-x_j}$$
+Thus, we can expect that a central limit theorem holds.  Even if the data aren't normal, if there are enough data, then estimates of the slope are as if they were drawn from a normal distribution.
+
+
+## Regression to the mean
+
+
+## Assumptions of regression
+
+1. The expected error everywhere is zero.  For each value of x.  $$E[e_i\ | \ x_i]=0$$.  
+2. The variance of the errors is everywhere the same.  For each value of x. $$Var[e_i\ |\ x_i]=\sigma^2$$.
+3. The errors at each data point are \todo{Need to discuss correlation before here.} uncorrelated. $$Cov[e_i, e_j\ | x_i, x_j]=0$$
+
+
+## How does the computer estimate the coefficients?
+There are two general strategies: 1) the method of Least Squares and 2) the method of Maximum Likelihood.
+
+

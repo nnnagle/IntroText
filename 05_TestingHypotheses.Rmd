@@ -1,0 +1,10 @@
+---
+title: "Testing Hypotheses"
+author: "Nicholas N. Nagle"
+date: "November 17, 2014"
+output: html_document
+---
+
+Points: 
+
+Fisher's significant data

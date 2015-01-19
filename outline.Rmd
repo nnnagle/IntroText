@@ -1,0 +1,234 @@
+---
+title: "Outline"
+author: "Nicholas N. Nagle"
+date: "December 29, 2014"
+output: html_document
+---
+
+# Chapter 1 Introduction
+“The scientific method’s central motivation is the ubiquity of error - the awareness that mistakes and self-delusion can creep in absolutely anywhere and that the scientist’s effort is primarily expended in recognizing and rooting out error.” David Donoho et al. (2009)
+Sources of error:
+- Vagueness
+- Noise
+- Misleading patterns
+- Mismeasurement
+## Examples
+## What is statistics
+As a Discipline: the science and art of learning from data
+A statistic: A quantitity that is calculated from data.
+Data are random: hence a statistic if random.  Random In, Random Out.
+## Why study statistics
+## Descriptive vs Inferential Statistics
+## Population and Sample
+## What makes statistics for geography different?
+Truths of goegraphy:
+1. geography non-stationary
+2. description and process changes over temporal and spatial scales
+3. interconnections between processes are often important
+4. the landscape is the long-term manifestation of complex interactions between processes that are internal and external to the landscape
+5. the landscape responds non-linearly to both internal and external forcing factors, and regulates itself through both positive and negative feedback
+6. a location is influenced by both large and local scale factors.
+liberally adapted from McGregor, G. R. (2006). Climatology: its scientific nature and scope. International Journal of Climatology, 26(1), 1–5. doi:10.1002/joc.1291
+
+# Chapter 2 Describing Data
+## Examples
+## Variables
+### Scales of measurement
+ Is this important?  How important?  
+ What about the distinction between categorical (nominal/ordinal) and quantitative (interval/ratio)
+- nominal: refers to data having discrete categories.  Examples indlude gender, race, soil type, cloud type, etc.  nominal sounds like name for a reason, they come from the same Latin root word *nomen# meaning "name".  Nominal variables can usually be named.
+- ordinal: refers to data having order.  A ranking of your favorite ice cream flavors would be an ordinal variable.  Students will be familar with ordinal data through their end of term evaluations: "I would recommend this course to other students.  1. strongly disagree. 2. Disagree 3. Neutral 4. Agree.  5. Strong Agree."  This sort of scaling is called a *Likert scale*.  Ordinal sounds like order for a reason, they both derive from the Latin word *ordo* meaning rank or row.
+- interval: refers to data in which the distance between values represents a standard unit.  The distance between 5 cm and 2 cm is the same as the distance between 10cm and 8 cm.  The difference between 10 people and 20 people is the same as the difference between 90 people and 100 people. This is unlike ordinal data, there is no sense in which the difference between strong agree and agree would be the same as between neutral and disagree.
+- Ratio data are like interval data, except that there is a natural zero.  
+
+- ratio
+## Frequency
+### The Histogram
+### The distribution function
+Parameters:
+- mean
+- variance
+### Specific Distributions
+  - Bernoulli
+- Binomial
+- Multinomial
+- Gaussian (normal)
+- Poisson
+- sampling distributions: t, F, chi-squared (defer to later)
+## Measures of Central Tendency
+- mean
+- median
+- mode
+- selecting a measure
+## Measures other than the center:
+- quantile
+- quartile
+### Measures of Variation
+- range
+- standard deviation and variance
+- Interquartile Range
+- Coefficient of variation, coefficient of dispersion (for poissonness)
+- 
+
+# Chapter 3 Models, Estimation
+Models are a cornerstone of statistics.  We use models to specify how data are created.  When I see a model, I can ask, do I believe that model?  Is it good enough?
+Models can be incredibly useful approximations to the truth.
+Avoid *reification*
+Keep in mind Box: "Essentially, all models are wrong.  Some are useful."
+"A model for data, no matter how elegant or correctly derived, must be discarded or revised if it does not fit the data or when new or better data are found and it fails to fit them."
+Velleman, P. F. (2008). Truth, Damn Truth, and Statistics. Journal of Statistics Education, 16(2).
+
+
+## Examples
+Statistical models tend to have a *deterministic* (fixed) component and a *stochastic* (random) component.  The deterministic component captures the part of the model that is shared by the entire population.  The stochastic component saptures the part fo the model that make individuals distinct.  Consider the body mass index data.  We can model the bmi of Males as
+$$\mbox{bmi}_i = \mbox{expected bmi} + \mbox{individual $i$'s difference}$$
+Each male's bmi is modeled as the expected bmi, which is shared by all males, plus or minus some random quantity.  Some men have a bmi that is higher than expected, and some have a bmi that is lower.  This is just the way things are.
+
+In a more abstract but useful mathematical notation, we would write this as:
+$$\mbox{bmi}_i = \mu + e_i$$
+where $\mu$ is the expected bmi, shared by all men, and $e_i$ is random difference of individual $i$.  Since the expected value $\mu$ is shared by everybody, it would be possible to learn about $\mu$ by observing lots of individuals.
+
+The expected value, or mean, may not seem like much of a model but it is.  When we use the mean, or average, we are making a statement: we believe the mean to be a useful characteristic for the population.  It is worth learning about.  Maybe we want to know if the average bmi in the population is above some "ideal" value that doctors says is good for you.  This might be worth knowing.  (However, see XX for a discussion on the dangers of believing that there is such thing as an ideal bmi).
+
+This model may be too simple.  It may not be good enough.  We have data on the age of people.  Perhaps bmi changes with age?  Maybe this is well known?  Or maybe it's something that we want to explore?  Either way, we can write this model, abstractly as
+$$\mbox{bmi}_i = f(\mbox{age}_i) + e_i$$.
+$f()$ is some vague, unknown function (see figure x).  In order to get practical, we have to choose a model with parameters.  Maybe it's approximately linear, with a slope and intercept?  Then the model is:
+$$\mbox{bmi}_i = a + b \mbox{age}_i + e_i$$
+Instead of just the one parameter $\mu$, now we have two parameters $a$ and $b$; the $intercept$ and $slope$ parameters.  Just as the mean was shared by everyone, now the slope and intercept are shared by everyone.  We can use the slope and intercept to calculate the expecte bmi for anyone, at any age.  The slope and intercept trace out a line which we are using to approximate the expected bmi at every age.
+
+Or maybe we believe that a better model for average bmi is quadratic (perhaps rising in early ages, only to decline again in old ages?). In this case, we choose the model:
+$$\mbox{bmi}_i = a + b \mbox{age}_i + c \mbox{age}_i^2 + e_i$$.
+Note that now, instead of a simple slope and intercept, we have three parameters: $a$, $b$ and $c$.  (Be careful, $b$ is no longer the slope.  The slope is changing at every age.)  The parameters $a$, $b$, and $c$ trace out a parabola, which we are using to approximate the expected bmi at every age.
+
+Or maybe we believe that a better model is like:
+
+http://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Michaelis-Menten_saturation_curve_of_an_enzyme_reaction.svg/841px-Michaelis-Menten_saturation_curve_of_an_enzyme_reaction.svg.png
+
+
+
+## Model Fitting
+Whatever the model we choose as an approximation for the scientific process, we will need to determine a way to find out what the best parameters are for that model.  If we think a simple mean will be a good approximation for expected bmi, that what is that mean?  You may immediately say, well, the mean is 
+
+$$\frac{\mbox{bmi}_1 + \mbox{bmi}_2 + \ldots + \mbox{bmi}_n}{n}$$
+I learned that in grade school.  But why is this a valid way to estimate the expected value?  Is this a valid way to estimate the expected value?
+
+There are many ways to estimate model parameters, but two that are particularly important are  *least squares* and *maximum likelihood* which we will take in turn.  You should understand the fundamental logic behind these methods, but leave it to the software to actually carry out the calculations.
+
+### Least Squares
+Let's begin with the simple, one-parameter mean model:
+$$\mbox{bmi}_i = \mu + e_i$$
+Given a dataset of $n$ observations of men and their bmi, how should we choose $\mu$?  Intuitively, $\mu$ should be near the middle of the data.  If $\mu$ is near them middle of the data, then most of the differences $e_i$ will be small.  Of course, some people have a bmi which is a great distance from the middle, and they will have very large positive or negative $e_i$.  But the $e_i$'s will tend to be close to zero.
+
+Now suppose you choose a $\mu$ that was very far from the middle.  Maybe even the smallest bmi possible.  For some people, people with a very small bmi, their difference will go down.  But for most people, for all those people in the middle, their difference will change from very small to something larger.
+
+It makes sense than that maybe we should choose the $\mu$ in order to make the differences $e_i$ as close to zero as possible.
+
+The *Least Squares Principle* chooses to estimate $\mu$ by making the sum of square differences as small as possible.  This sum of square differences is $e_1^2 + e_2^2 + \ldots + e_n^2$, or in a more compact notation $\sum_{i=1}^n e_i^2$.  Each difference is just the difference between bmi and $\mu$, so we can write this least squares as
+or, in a more compact notation: $\sum_i (\mbox{bmi}_i - \mu)^2$.
+
+We can solve this by trial and error.  Pick a value for $\mu$ and calculate the sum of square differences.  Now pick a different value and calculate the sum of square differences.  Keep on doing this until you find out where the sum of square differences is as small as possible.  See BOX
+
+You don't have to do this repetitive process.  You  can let the computer do this for you.  It turns out that you don't have to repeat this process in this way.  Calculus can be used to hopefully find a simple equation for the answer.  This is in fact how it is done.  It turns out that that simple equation for $\mu$ is just the sample mean:
+$\mu = \frac{\sum_i \mbox{bmi}_i}{n}$.  This helps to identify in what what the sample mean is a good summary for the data: of all the possible numbers your could choose, the sample mean minimizes the square differences.  In a certain sense, *the sample mean is the unique number that is closest to all of the data*.
+
+An important note is that we have said nothing about the distribution of the differences $d_i$.  Maybe the differences have a nice bell curve.  Maybe they don't.  It doesn't matter.  The sample mean is still the number that is "closest" to the data.
+
+The least squares principle is quite general and is not limited to the mean.  Remember the slope-intercept model $\mbox{bmi}_i = a + b \mbox{age}_i + e_i$?  We can still use least squares to find the two parameters $a$ and $b$.  We find $a$ and $b$ in order to make the sum of square errors $\sum_i e_i^2=\sum_i (\mbox{bmi}_i - a - b \mbox{age_i})^2 as small as possible.  It doesn't matter what the distribution of the differences is.  The least squares $a$ and $b$ define the line that is "closest" to the data.  We'll revisit this in more depth in Chapter XX.
+
+### Maximum Likelihood
+
+
+
+# Chapter 4 Sampling Distributions
+## Examples
+## Law of Large Numbers
+## Central Limit Theorem
+### Description
+### Requirements
+Back to modeling... Deterministic plus stochastic (random) = Important part plus all the small stuff
+Don't sweat the small stuff
+### When enough is enough
+## The t-distribution
+
+# Chapter 5 Correlation and Regression
+## Examples
+- Elderton and Pearson's drinking and wages data
+- Gossett's parent/child data
+- Henri's tree ring width precipitation
+## Correlation
+Coefficients:
+- Pearson "product-moment"
+- Spearman
+## Regression
+### Equations
+
+# Chapter 6 Testing Hypotheses and Confidence Intervals
+## Examples
+- Arbuthnot data
+- cloud seeding data
+## The Hypotheses
+Hypothesis + auxiliary assumption -> Prediction
+Null and alternative
+## Statistical Significance
+p-values
+Statistical significance is not scientific significance
+p-value is likely to be very different if an experiment is repeated.  p-value is more about the data at hand than about an finding's repeatability.
+## Statistical Decision Making
+alpha-values
+
+What Fisher really meant
+The Zero value null hypothesis
+## Confidence Intervals
+## Bootstrapping
+- Perhaps Macdonell's data as used by Gossett?
+## Some Simpler examples
+### Testing one mean
+### Testing two means
+### Testing a correlation coefficient
+
+#### Philosophy of quantitative methods by brian haig in oxford handbook of quantitative methods.
+
+# Chapter 7 Multivariate Regression
+## Equations
+## Special Case: ANOVA and testing multiple means
+- The ANOVA model and hypothesis
+- ANOVA as a regression
+- Reading an ANOVA table
+## Interpreting coefficients
+## Confounding
+## Interpretation
+## Assumptions
+- Linearity (model specification)
+- Constant Variance (homoskedasticity)
+- Normality (large N) Confusing data distribution and sampling distribution.  Completely irrelevant for X
+- Independence
+
+# Chapter 8 Model Checking
+- Scatterplot (scatterplot matrix; biplot)
+- Residuals vs fitted
+- Influence/Leverage
+- Residuals vs time or space
+- Partial Residuals
+- Normal Probability Plot
+
+# Chapter 9 Classification & Nonlinear Regression
+
+# Chapter 10 Introduction to Spatial and Temporal Data
+## Examples
+- Autocorrelation
+- ACF
+- Autoregressive Models
+- Kriging
+- How does autocorrelation affect regression?
+- Point Patterns
+
+
+# Data Ideas
+- old faithful geyser
+- Titanic
+- robustbase:radarImage (google frery radar munich)
+- HMDA?
+  - Elvin Wyly has a good replication policy: http://ibis.geog.ubc.ca/~ewyly/replication.html including  a listing of gentrified census tracts in 23 metro areas.
+- Snow's cholera data?
+- Boston house price data
+- AVIRIS data from Khanna et al PLOSONE for oil spill

@@ -1,0 +1,212 @@
+---
+title: "Chapter 3: Sampling Distributions"
+author: "Nicholas Nagle"
+date: "November 14, 2014"
+documentclass: BYUTextbook/BYUTextbook
+header-includes:
+ - \usepackage{todonotes}
+ - \usepackage{mdframed}
+output: 
+  pdf_document:
+    template: default2.latex
+    keep_tex: false
+---
+Outline:
+Note. I would like to motivate the mean as only one example.
+1. Example of variation in sample means
+2. Show three things: an individual sample means improves with sample size
+2b. We call this the Law of Large Numbers
+3a. The variance of the sample means improves with sample size
+3b. The variance of the sample means has a nice bell curve distribution.
+3c. We call this the Central Limit Theorem.
+4. The Central Limit Theorem is why we have a statistics.  It's an almost magical property.  What is normal about the normal distribution.  Perhaps the best thing to say is simply that if you add a bunch of small errors, you get a normal distribution.  This is by mathematic definition.  It's just like, what transformation turn multiplication into addition? (the logarithmic transformation).  What is the distribution of summing together a lot of small errors?  (The normal distribution).
+5. The Central Limit Theorem allows us to to say how much variability there us in creating a sample mean.  Even before we go out at collect data, we know what the variability should be. We know what typical values would be, and what unusual values would be.  This is a crucial property.
+
+## Sampling
+Alf Landon and Roosevelt
+
+
+### The Law of Large Numbers
+We will consider as an example the problem of estimating the crop coverage for the Northwest of Rwanda.  Figure \ref{fig:lc} shows the landcover in 2014.
+```{r cache=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
+library(rgdal)
+library(raster)
+library(ggplot2)
+library(reshape2)
+lc <- raster('data/MCD12Q1.A2012001.h20v09.051.2014288201753.Land_Cover_Type_1.tif')
+evi <- lc==14
+
+lc_small <- sampleRegular(lc, 20000, asRaster = TRUE)
+lc_ggdata <- as.data.frame(cbind(xyFromCell(lc_small, seq_len(ncell(lc_small))), values(lc_small)))
+names(lc_ggdata) <- c('x','y','lc')
+
+load('lib/palettes.Rdata')
+lc_ggdata$lc <- factor(lc_ggdata$lc, levels = c(0:16, 254, 255), labels = names(worldgrids_pal$IGBP))
+
+
+fig <- ggplot(aes(x=x, y=y), data=lc_ggdata) + geom_raster(aes(fill=lc)) + scale_fill_manual(values=worldgrids_pal$IGBP) + coord_equal()
+
+ggsave(filename='figures/raster.pdf')
+
+#pdf('figures/raster.pdf', width=5, height=5, paper='special')
+#plot(evi)
+#dev.off()
+```
+\inlinefig{figures/raster.pdf}{\label{fig:lc}Figure}
+
+
+
+
+```{r cache=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
+N <- 2000
+lln.data <- as.data.frame(lapply(1:10, function(x) cumsum(evi[sample(ncell(evi), N)])/seq(1,N)))
+names(lln.data) <- paste('Series', 1:10, sep='')
+lln.data$size <- 1:N
+
+lln_fig1 <- ggplot(lln.data) + geom_line(aes(x=size, y=Series1)) + geom_hline(yintercept=mean(evi[]))
+ggsave(filename='figures/lln_fig1.pdf')
+
+```
+
+
+The average EVI across the image is r mean(values(evi)).  But, suppose that we didn't know this, and wanted to estimate it.  We could randomly sample locations on the map, send a researcher there, and record the vegation index there.  When we are done, we could calculate the sample average, and report that as an estimate of the unknown mean.
+
+Most people intuitively understand that if we collect larger samples then the estimate should improve it.  Figure \ref{fig:lln1} shows one possible result, in which we re-calculate the mean after each new sample comes in.  You can see that as the sample size increases the sample mean tends to become closer to the actual mean of r mean(values(evi)).  You can also see that this improvement is not continuous or smooth.  The sample means tends to wander around a bit, however the wandering tends to get smaller with more samples.  The mathematical description of this behavior is called the \emph{Law of Large Numbers} (LLN).  \outnote{\textbf{Law of Large Numbers}} There are actually many different mathematical statements of the LLN, which apply under more or less stringent conditions, but most LLNs describe that for any given level of error, the probably that the wandering exceeds this error will eventually shring toward zero.
+
+\inlinefig{figures/lln_fig1.pdf}{\label{fig:lln1}Figure}
+
+
+
+
+```{r cache=FALSE, message=FALSE, eval=FALSE}
+temp <- melt(lln.data, id.var='size', variable.name='EVI')
+lln_fig2 <- ggplot(temp) + geom_line(aes(x=size, y=value, color=EVI)) + 
+  geom_hline(yintercept=mean(evi[]))
+ggsave(filename='figures/lln_fig2.pdf')
+
+
+```
+
+\inlinefig{figures/lln_fig2.pdf}{\label{fig:lln2}Figure}
+
+
+Figure \ref{fig:lln2} show many different random traces.  (Suppose that there are ten different teams all working on the same estimation problem, but all visiting different random sites in different orders).  The general pattern is that some estimates can be quite wrong with small samples (but other estimates can be quite good), but that all estimate converge on the truth to some extent.  You can also see that there are diminishing returns; the quality improves quickly, but that increasingly larger sample sizes are needed to further improve the quality.  
+
+The Law of Large Numbers is comforting.  It implies that we can always hope to get better estimates by collecting more data.  But the practical applications of the LLN are limited.  For  my sample size, what are typical values of the sample mean?  How far off is my sample mean from the true mean?  The LLN does not provide answers to these questions.
+
+
+
+### The Central Limit Theorem.
+
+Suppose now that there are hundreds, or even thousands of different research teams, all working on the sample problem to estimate the crop coverage in this region of the world.  Each team visits ten sites and calculates the mean from their sample of 10 sites.  A boxplot of all of their sample means is shown in Figure XXa.  Suppose these teams take samples of 100 sites.  These sample means are shown in Figure XXb.  Suppose they take 
+
+```{r cache=FALSE, message=FALSE, eval=FALSE}
+N <- 1000
+sample1 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 1)]))
+sample2 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 2)]))
+sample4 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 4)]))
+sample10 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 10)]))
+sample30 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 30)]))
+dat <- data.frame(sample1, sample2, sample4, sample10, sample30)
+temp <- melt(dat)
+
+clt_hist <- ggplot(data=temp) + geom_histogram(aes(x=value, y=..density..)) + 
+  facet_grid(variable~.)
+
+ggsave(filename='figures/clt_hist.pdf', clt_hist)
+```
+
+\inlinefig{figures/clt_hist.pdf}{\label{fig:clt1}Figure}
+
+Figure \ref{fig:clt1} shows histograms for all those different experiments.  The top show the histogram if the teams take just one sample (which is definitely not advised!).  Approximately 1/2 of the teams will sample a pixel with cropland, and estimate that 100% of the land is cropland.  Approximately 1/2 of the teams will sample a pixel with cropland, and estimate that 0% of the sample is cropland.  The second frame shows the results if the teams take 2 samples.  About 25% of the teams will get 2 crop pixels.  These teams will estimate that 100% of the area is cropped.  Another 25% of the teams will get 0 crop pixels and estimate that 0% of the area is croped.  And the remaining 50% of the the teams will get 1 crop pixel and 1 non-crop pixel, and estimate that 50% of the area is cropped.  The later frames show the histograms of crop area estimates if the teams collect 4, 10, and 30 pixels. The interesting observation is that as the sample size increases, the histogram of all of the possible estimates 
+
+1. is centered at the true value of r mean(values(evi)).  On average, the estimates are neither too high nor too low.
+2. get more precise.  With larger samples, the probability of getting really bad estimates diminishes.
+3. the distribution of estimates begins to look a lot like the normal distribution.
+
+The first point is a statement about the expected value of the distribution of estimates.  The second point is a statement about the variance of the dsitribution of estimates.  And the third statement is a statement about the actual shape of the distribution of estimates.  This third statement is quite powerful, for if we know the shape of the distribution, then we not only know what the mean and variance are, but we also know what are common and rare values.  
+
+\outnote{\textbf{Central Limit Theorem}} Mathematically, we can express the Central Limit Theorem for the sample mean as:
+$$\mbox{As } N \rightarrow \infty, \mbox{then }  \bar{x} \sim N\Big(\mu, \frac{\sigma^2}{N}\Big)$$
+
+The CLT is hugely important.  To see this, it help to think not of the distribution of the sample mean, but of the distribution between the sample mean and the true mean, i.e. the distribution of our error.  The distribution of the error is
+$$ \mbox{error } = \bar{x}-\mu \sim N\Big(0, \frac{\sigma^2}{N}\Big)$$
+
+This is a strange thing.  We don't know what the error is because we don't know the population mean $\sigma^2$.  But we do know what the distribution of the error.  We how like small values are, and how likely large values are.  We can ask questions like: "What are the chances that my mean is off by 10\%?"
+
+\begin{mdframed}[backgroundcolor=gray!10, frametitle={The Quincunx}]
+Sir Francis Galton devised a neat machine to demonstrate the Central Limit Theorem, which he called the quincunx (Figure X).  Besides being a 26 point Scrabble word, quincunx is the name for the pattern of dots like the fifth side of a die.  As balls are dropped into the device, they hit a nail and randomly bounce to the left or to the right, where then fall down and hit another nail, again bouncing to the left or right, until they are eventually collected at the bottom.  The eventual distribution of balls can be closely approximated by a normal distribution.  Each nail is a bernoulli experiment, forcing the ball to randomly go to the left or right.  The device is thus the aggregation of a large number of bernoulli trials.  Or a binomial experiment.
+\inlinefig{images/Galton-box-commentary.jpg}{The Galton box, or quincunx.}
+\end{mdframed}
+
+## Technical Requirements for the CLT
+
+## When is N big enough?
+
+As we see in Figure  \ref{fig:clt1}, even when the initial data histogram is not normal, the distribution of means can look like the normal, even in small samples.  For the sample size $N=30$ in  Figure  \ref{fig:clt1}, the distribution is very closely approximated by a normal.  Is this always the case?  No.  
+
+
+Intuitively, when does the CLT not help us?  When errors don't add.  What if the rich get richer?  This might be a multiplicative process (not additive).  What if some errors are much bigger than others?  Figure \ref{fig:clt2} shows the distribution of sample means for estimatint the land area in class 8.  In contrast to the previous example, in which 50% of the data were in teh crop class, only about 5% of the data are in this class.  In the previous case, the distribution looked pretty close to normal by $N=30$.  Now, at $N=30$, the distribution is still very discrete and skewed.  The distribution at $N=100$, however, looks more like a normal distribution.
+
+The CLT says that as N gets large, the distribution of the sample mean will look like a normal distribution.  But what exactly is meant by "as N gets large" depends on the situation.  When the original distribution was relatively symmetric, then the means coverged on the normal distribution at relatively small $N$.  When the initial distribution is highly skewed, however, then convergene happens much slower.  In general, for events that are very rare, much larger sample sizes are needed before the CLT become a good approximation.  But we can be assured, that eventually, for some large $N$, the CLT is a good approximation.
+
+
+```{r cache=FALSE, message=FALSE, eval=FALSE}
+evi <- lc==8
+N <- 1000
+sample1 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 1)]))
+sample5 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 5)]))
+sample30 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 30)]))
+sample100 <- sapply(1:N, function(x) mean(evi[sample(ncell(evi), 100)]))
+dat <- data.frame(sample1, sample5, sample30, sample100)
+temp <- melt(dat)
+
+clt_hist <- ggplot(data=temp) + geom_histogram(aes(x=value, y=..density..), binwidth=.01) + 
+  facet_grid(variable~.)
+
+ggsave(filename='figures/clt_hist2.pdf', clt_hist)
+```
+\inlinefig{figures/clt_hist2.pdf}{\label{fig:clt2}Figure}
+
+
+\begin{mdframed}[backgroundcolor=gray!10, frametitle={The Theory of Probable Error}]
+Probable Errrs.  Gauss and motions of comets.  Galton and "normal" in social sciences.  The CLT applies anytime many small errors are summed together.  Satellite observations, many small errors due to atmospheric distortions and recording telescopes are added together.  Height: many small deviations ("error") due to genetics and environment are added together.
+\end{mdframed}
+
+
+## The t-distribution
+
+\begin{mdframed}[backgroundcolor=gray!10, frametitle={William T. Gossett}]
+\end{mdframed}
+
+
+
+Draw some small samples, and calculate statistics.  Show the variability.
+
+Draw larger samples and calculate statistics.  Show the variability.
+
+Doing this sort of exercise, we can create a boxplot of the sample means.  We can see that as the sample gets larger, the precision of the sample mean increases.  With a small sample, the mean might be quite far away from the true mean.  With a large sample, the mean is closer.  This is a general law of mathematics.  As the sample gets larger, the estimate gets more precise.  It's called the "Law of Large Numbers."
+
+Do things get precise at the same rate?  No.
+
+There is no guarantee that we have enough sample size to be precise.  A common answer when things go wrong in statistics is "collect more data."  The law of large numbers is why.
+
+side bar on cauchy distributions and stocks.
+
+Doing this sort of exercise, we can create a histogram of sample means.  Surprisingly (to the author at least), the histogram of sample means has a distribution that looks like a Gaussian distribution.  With the larger samples, the distribution still looks normal, however it has less variability.
+
+There are two things going on here.  
+
+Perhaps a Comparing distributions box here.... qqplot.  
+
+
+Data have a distribution.  Some people are bigger than others.  Some trees are bigger than other trees.  We might want to descrive both the average of these distributions, and the variability. This is a relatively easy concept to grasp.  In some sense, the mean tells us which single value is "most typical,"  whereas the standard deviation helps us to understand what other values are also typical. 
+
+This is all fine and dandy.
+
+But what a lot of students have difficulty with is the concept of a sampling distribution.
+
+
+
+Questions:
+Consider drawing a sample of 4 pixels.  And an image with just 4 pixels.  The 4 pixel image will be more precise.  Why?

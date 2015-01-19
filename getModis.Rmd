@@ -1,0 +1,101 @@
+---
+title: "getModis.Rmd"
+author: "Nicholas N. Nagle"
+date: "November 15, 2014"
+output: html_document
+---
+
+
+## Tools you will need
+ 1. Linux or Mac.  Sorry Windows users.  I'm sure you can adapt this to a Windows environment, but I can't help you.
+ 2. R 
+ 3. wget On my Mac, I installed it with macports
+ 4. the Modis Reprojection Tool (MRT). link here
+ 5. Background libraries for MRT.  On Mac, I installed them with macports.
+ 6.  
+
+## Find which data we need.
+[Here](https://lpdaac.usgs.gov/products/modis_products_table) is a list of the MODIS products.
+
+The product we will use is the 1km Vegetation Indices product from the Terra satellite (MOD13A2).  Following the links to the product, to data access, and then to the data pool eventually takes us to the page http://e4ftl01.cr.usgs.gov/MOLT/, where we then select http://e4ftl01.cr.usgs.gov/MOLT/.
+
+
+
+
+## Downloading the data
+### Finding a pattern in the data.
+The data are in the folder http://e4ftl01.cr.usgs.gov/MOLT/MOD13A2.005/.  There is a file for each 16 day period (there are 23 in a year.)  Open one of those files to see how the data are structured.  There are two file types: Browse files, which are a jpg you can conveniently view to see a low resolution image, and the actual data files that begin with MOD13A2 and end with .hdf.  There is a funny grid covering the world.  The hXXvXX part of the file name refers to this grid.
+
+We need to find which grid cell we want.  A google search for "modis grid"" will bring up lots of images.  I clicked on this one: http://modis-land.gsfc.nasa.gov/MODLAND_grid.html
+Rwanda is in grid cell h21v09.
+
+Google Earth file of the grid.  http://spatial-analyst.net/KML/MODIS_tiles.kmz
+
+
+From this, we can tell that we want to download every file matching http://e4ftl01.cr.usgs.gov/MOLT/MOD13A2.005/????.??.??/MOD13A2.A2000065.h21v09.005.?????????????.hdf
+
+Real quickly, each file is 21M.  There are 23 files per year.  About 15 years of data as of writing this.  We will be downloading 7245M (7.2G) of data.  We won't keep all of this, but we will be downloading all of this.  This will take awhile.
+
+### Downloading the data
+I'll use wget to download the data.  wget is my go-to tool for downloading large amounts of public data, whether from the US Census Bureau or from NASA.
+
+wget -A "MOD13A2.A2000065.h21v09.005.?????????????.hdf" -r --tries=45 http://e4ftl01.cr.usgs.gov/MOLT/MOD13A2.005/
+
+```{r}
+wget.loc <- '/opt/local/bin/'
+dl.dir <- '/Volumes/HDD2/Data/Modis/Rwanda'
+dir.create(dl.dir)
+proj.dir <- getwd()
+setwd(dl.dir)
+wget.cmd <- sprintf('%swget -r -A "%s" -o wget.log -nH --cut-dirs=20 -np http://e4ftl01.cr.usgs.gov/MOLT/MOD13A2.005/',
+                    wget.loc,
+                    'MOD13A2.*.h21v09.005.*.hdf')
+system(wget.cmd)
+
+```
+
+## Reproject 
+Rwanda straddles 35, 36 zones, but we'll use 35.
+
+
+Note, it took me a while to recognize that the empty line at the end of the .prm file is important.
+```{r}
+mrt.loc <- '/Applications/MRT/bin'
+mrt.data.dir <- '/Users/nnagle/local/MRT/data'
+Sys.setenv(MRT_DATA_DIR = mrt.data.dir)
+
+modis.hdf.files <- list.files(pattern = '*.hdf')
+cat("INPUT_FILENAME = MOD13A2.A2010001.h21v09.005.2010027041304.hdf
+SPATIAL_SUBSET_TYPE = INPUT_LAT_LONG
+SPATIAL_SUBSET_UL_CORNER = ( -1.5 29 )
+SPATIAL_SUBSET_LR_CORNER = ( -2.5 30 )
+OUTPUT_FILENAME = temp.tif
+RESAMPLING_TYPE = NEAREST_NEIGHBOR
+OUTPUT_PROJECTION_TYPE = UTM
+DATUM = WGS84
+UTM_ZONE = 35
+OUTPUT_PIXEL_SIZE = 1000
+", file='template.prm')
+
+for(f in modis.hdf.files){
+  resample.cmd <- sprintf('%s/resample -p %s -i %s -o %s ', 
+                          mrt.loc, 'template.prm', f,
+                          paste(file_path_sans_ext(f), '.tif', sep=''))
+
+  system(resample.cmd)
+}
+
+```
+
+
+
+```{r}
+query<-paste("create table modis2.ndvi_",i,"(CHECK (fdate >= DATE '",i,"-01-01' AND fdate <= DATE '",i,"-12-31' )) inherits (modis2.ndvi);",sep="")
+ 
+command<-paste("raster2pgsql -s 4326 -d  -M -R /home/duncan/rasters/modis2/",f," -F -t 500x500 temp|psql -d models",sep="")
+query<-"alter table temp add column fdate date; update temp set fdate = substring(filename,1, 10)::date;"
+query<-paste("insert into modis2.ndvi_",i," (rid,fdate,rast) select rid,fdate,rast from temp;",sep="")
+    
+query<-paste("CREATE INDEX modis_ndvi-",i,"_spindex ON modis2.ndvi_",i," using gist(st_convexhull(rast));",sep="")
+ 
+```

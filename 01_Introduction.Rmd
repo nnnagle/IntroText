@@ -1,0 +1,224 @@
+---
+title: "Chapter 1"
+author: "Nicholas Nagle"
+date: "November 14, 2014"
+documentclass: BYUTextbook/BYUTextbook
+header-includes:
+ - \usepackage{todonotes}
+ - \usepackage{mdframed}
+ - \usepackage{soul}
+output: 
+  pdf_document:
+    template: default2.latex
+    keep_tex: false
+---
+
+\newcommand{\hlfix}[2]{\texthl{#1}\todo{#2}}
+
+How do we learn about the world?
+
+How did we learn that smoking can lead to lung cancer?  There are many causes of lung cancer and we still can't predict who will get it and who won't.  So, how did we learn that smoking can be one of those causes?  
+
+How can we learn whether climate change is being affected by humans?  The climate has always changed, and we still don't understand fully all the reasons why.  How can we learn that humans are one of these causes in the present day?
+
+How do we learn about the world?  This question strikes at the core of what science is.  Our world is messy and complicated and its difficult to know anything for certain.  So how do we slice through this uncertainty and make conclusions?  The answer to this question is crucial to scientific discovery, to responsible policy making, and to better business decisions.    *Statistics* is one way to quantitatively address all the uncertainty in the world.  Statistics is the science and art of learning from data.  For any scientific question, statistics indludes the determination of which data to collect, the design of a study to collect them, how to process and interpret them, and how to communicate our interpretations to the public.
+
+
+# Population and Sample
+In order to help us think rigorously abot uncertainty, statistics makes an important distinction between population and sample.  Whatever it is that we are studying, the *population* contains *all* of the members of interest.  A *sample* is a subset - a collection - that contains some of the population of interest.  For example, the Behavioral Risk Factor Surveillance System is an survey of health behaviors from an annual sample of approximately 400,000 adults.  The population for this survey is every adult resident of the United States.  A sample is needed because it is impractical to visit every single house in the US year after year.  The Forest Inventory and Analysis (FIA) program is an annual survey administered by the US Forest Service to monitor the health and status of forests in the United States.  The population is every forest and every tree bush and shrub in the United States.  Since it is impractical to visit every tree, the FIA collects data for a sample of small plots scattered throughout the US.
+
+
+\hlfix{In such studies, the population is fairly explicit.  In many statistical studies, the population is only weakly implied.  Consider a study of global climate change over the last few thousand years, and the question of whether the recent change is largely driven by anthropogentic (man-made) factors.  The sample might be some measurement of temperature over this time period.  But what is the population?  This is a difficult question.  The best answer is that the population is not the actual temperature measurements, but that the population is the scientific processes that result in climate change.  From this scientific process, you could image "alternate" or "parallel" histories of temperature, which are all equally possible, of which we have observed only one.  Out question that can be addressed by statistics is is whether any of those possible timelines could include the dramatic increase over the last 100 years.}{Consider rewriting as a box with a figure of the hockey stick? Or perhaps to mimic the Malpais data.}
+
+When selecting a sample, it is crucial that the sample is representative of the population.  A sample is *representative* if it can be considered as a small replica of the population; equivalent to the population in all characteristics apart from size.  Representativeness is important because it enables us to *generalize* findings from the sample the the entire population.  If a sample is a replica of the population, then we can transfer characteristics of the sample to the population as well. For example, if in a representative sample of people, 30 percent of the sample is found to be low-income, then we can generalize to say that about 30 percent of the population is low-income as well. 
+
+One of the most fundamental problems for generalization is when the sample is not representative of the population.  Recall the BRFSS - the survey samle of health behaviors in the United States.  Suppose that the BRFSS included very few people in their 20s and 30s.  If this were the case, than the sample would not be a small replica of the population, and the characteristics of the sample would not be the same as the characteristics of the population.  We might be able to generalize to the US population that is 40 and over, but we would not be able to generalie to the entire population of US adults.
+
+The most important questions you can ask when you see statistics presented are: "What is the sample?  What is the intended population?  And Is the sample representative of this population?"  If you remember little else from your study of statistics, please remember how to ask and answer these questions!
+
+\begin{mdframed}[backgroundcolor=gray!10, frametitle={Gallup, The Literary Digest and the 1936 Presidential Election}]
+
+\end{mdframed}
+
+
+
+
+# Examples
+
+
+
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+library(dplR)
+nm580 <- read.crn('ftp://ftp.ncdc.noaa.gov/pub/data/paleo/treering/chronologies/northamerica/usa/nm580.crn')
+
+nm580.rwl <- read.rwl('ftp://ftp.ncdc.noaa.gov/pub/data/paleo/treering/measurements/northamerica/usa/nm580.rwl')
+nm580.rwi <- detrend(nm580.rwl, method='Spline', verbose=TRUE)
+nm580.2 <- apply(nm580.rwi, 1, mean, na.rm=TRUE)
+nm580.22 <-  apply(nm580.rwi, 1, tbrm)
+cor(nm580.2, nm580.22)
+
+library(ggplot2)
+# trw: tree ring width
+# read in the trw, accounting for NA values
+trw <- read.table("data/MLC.COL", stringsAsFactors=FALSE, na.strings='.')
+names(trw) <- c("year", "stand_chron", "resid_chron")
+row.names(trw) <- trw$year
+#ggplot(data=trw) + geom_path(aes(x=year, y=resid_chron))
+
+# Read in the monthly precip values
+raw_precip <- read.table("data/2904.pcp")
+names(raw_precip) <- c("year", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", 
+    "Aug", "Sep", "Oct", "Nov", "Dec")
+# Create a merged trw-precip dataset
+data <- cbind(raw_precip, 
+              stand_chron=trw[as.character(raw_precip$year), 'stand_chron'])
+# Add on next year's chronology too
+data <- cbind(data,
+              stand_chron_next = trw[as.character(raw_precip$year+1), 'stand_chron'])
+# Calculate monthly correlations for current year
+sapply(c('Jan', 'Feb','Mar','Apr','May','Jun','Jul','Aug'), 
+       function(x) cor(data[,'stand_chron'], data[,x], use='complete.obs'))
+# Calculate monthly correlations for previous year
+sapply(c('May','Jun','Jul','Aug', 'Sep', 'Oct', 'Nov', 'Dec'), 
+       function(x) cor(data[,'stand_chron_next'], data[,x], use='complete.obs'))
+
+
+# Reshape the precip values to 
+library(reshape2)
+precip <- melt(raw_precip, id.vars = "year", value.name = "precip", variable.name="month")
+# The order is screwy.  We should sort by year, then month
+precip <- precip[order(precip$year, precip$month), ]
+library(zoo)
+# Grissino-Mayer uses previous July to current July.  this is a 13 month moving total
+precip$ma <- rollmean(precip$precip, k=13, fill = NA, align = "right") * 13
+# I multiplied by 12 to turn monthly average into  total.
+# Now extract the July values
+precip_yr <- subset(precip, month == "Jul" & !is.na(ma))
+names(precip_yr) <- c('year', 'month','Jul_precip', 'total_precip')
+row.names(precip_yr) <- precip_yr$year
+
+# Now create a new dataset with chronology and 
+data <- trw
+data$precip <- precip_yr[row.names(trw), 'total_precip']
+with(data, cor(stand_chron, precip, use='complete.obs'))
+# That's a decent correlation.
+
+# create a ggplot data object
+gg.data <- trw[,c('year','stand_chron')]
+names(gg.data) <- c('year','value')
+gg.data$var <- 'trw'
+
+gg.datb <- precip_yr[,c('year','ma')]
+names(gg.datb) <- c('year','value')
+gg.datb$var <- 'precip'
+
+gg.dat <- rbind(gg.data, gg.datb)
+gg.dat$var <- factor(gg.dat$var, levels=c('trw','precip'))
+
+ggplt <- ggplot(data=gg.dat) + geom_path(aes(x=year, y=value)) + 
+  facet_grid(var~., scales='free_y') + scale_x_continuous(limits=c(1500, 2000))
+ggsave('figures/mlc.pdf')
+```
+
+\inlinefig{figures/mlc.pdf}{\label{fig:mlc}Figure}
+
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+load('data/boston_shp.Rdata')
+library(classInt)
+brks <- classIntervals(boston_shp$cmedv, n=5, digits=2)
+
+boston_shp$cmedv <- factor(findInterval(boston_shp$cmedv, brks$brks, all.inside = TRUE), 
+                           labels=attributes(print(brks))$dimnames[[1]])
+
+brks <- classIntervals(boston_shp$nox, n=5, digits=2)
+brks$brks <- round(brks$brks, 2)
+
+boston_shp$nox <- factor(findInterval(boston_shp$nox, brks$brks, all.inside = TRUE), 
+                           labels=attributes(print(brks))$dimnames[[1]])
+
+
+
+boston.ggdf <- fortify(boston_shp, region='TRACT')
+library(plyr)
+saferFortify.SPDF <- function(model, data, region=NULL){
+ warning('Using FIDs as the id.  User should verify that Feature IDs are also the row.names of data.frame. See spChFIDs().')
+ attr <- as.data.frame(model)
+ coords <- ldply(model@polygons,fortify)
+ coords <- cbind(coords,attr[as.character(coords$id),])
+}
+boston.ggdf <- saferFortify.SPDF(boston_shp, region='TRACT')
+plt1 <- ggplot(boston.ggdf, aes(x=long, y=lat, group=group, fill=nox))
+plt1 <- plt1+geom_polygon()+coord_equal()+scale_fill_brewer(palette = 'Blues')+
+  scale_x_continuous('', breaks=NULL)+scale_y_continuous('',breaks=NULL)
+
+library(RColorBrewer)
+plt2 <- ggplot(boston.ggdf, aes(x=long, y=lat, group=group, fill=cmedv))
+plt2 <- plt2+geom_polygon()+coord_equal()+
+  scale_fill_manual(values = rev(brewer.pal(5, 'Blues')))+
+  scale_x_continuous('', breaks=NULL)+scale_y_continuous('',breaks=NULL)
+
+source('multiplot.R')
+pdf(file='figures/boston.pdf', width=par("din")[1], height=par("din")[1])
+plt <- multiplot(plt1, plt2, cols=1)
+invisible(dev.off())
+```
+\inlinefig{figures/boston.pdf}{\label{fig:boston}Figure}
+
+
+
+## What is statistics?
+
+
+Communication is an important part of statistics.  A well constructed chart or number will often better communicate a story than raw data.
+
+# Why study statistics?
+
+Figure X is my overly-simplified model of statistics, or learning from data.  On the right hand side is the "way the world works."  There are inputs, then life happens, and outputs happen.  There is the weather today (inputs), atmospheric sciency stuff happens (process), leading to the weather tomorrow (output).  Weather is complicated, however; we are unable to perfectly or completely observe weather.  The best we can do is to measure quantities such as temperature, precipitation, and pressure at fixed points in time and space.  These measurements comprise data.  Data are an approximation to the world, however.  Sometimes our data are very precise. But at other times, 
+
+Platos's Cave?
+
+# Descriptive Statistics vs Inferential Statistics.
+
+Sidebar on Tukey.
+
+ - "If we need a short suggestion of what exploratory data analysis is, I would suggest that
+    - It is an attitude AND
+    - A flexibility AND
+    - Some graph paper (or transparencies, or both).  
+    
+  No catalogue of techniques can convey a willingness to look for what can be seen, whether or not anticipated. Yet this is at the heart of exploratory data analysis. The graph paper - and transparencies - are there, not as a technique, but rather as recognition that the picture-examining eye is the best finder we have of the wholly unanticipated.
+  
+  - Far better an approximate answer to the right question, which is often vague, than an exact answer to the wrong question, which can always be made precise.
+  - Once upon a time statisticians only explored. Then they learned to confirm exactly - to confirm a few things exactly, each under very specific circumstances. As they emphasized exact confirmation, their techniques inevitably became less flexible. The connection of the most used techniques with past insights was weakened. Anything to which a confirmatory procedure was not explicitly attached was decried as 'mere descriptive statistics', no matter how much we had learned from it.
+  - There is no data that can be displayed in a pie chart, that cannot be displayed BETTER in some other type of chart.
+Doing statistics is like doing crosswords except that one cannot know for sure whether one has found the solution.
+
+# Population and Sample
+
+The concepts of population and sample are fundamental to understanding statistical logic.  A *sample* is a set of observations.  The *population* is the  larger group, including the observation as well as everything not observed.  In the case of the survey sample of the Behavioral Risk Factor Surveillance System, the population is every adult resident of the US 18 years and older.  For US health policy, this is an interesting population - one that we definitely want to know something about.  Sometimes, the actual population of a sample is different from the intended population.  Suppose that, for some reason, the BRFSS didn't include any minority persons.  Then, the sampled population would have been all adult, non-minority residents US - a much less interesting population.  Making sure that the sampled population matches the population of interest is a central concern of statistics.
+
+It is sometimes difficult to determine the proper populatoin of a sample, especially when there are two or more variables.  \outnote{An important question to ask is: "From what population does this sample come?"} What is the corresponding population for the study using the El Malpais tree ring dataseries?  We have approximately 2000 years of tree ring data, and approximately 100 years of precipitation data.  There is an implied relationship between precipitation and tree ring width. Our goal is to use the tree ring data to estimate the precipation over the last 2000 years.  In this case, our sample is the observed relationship between precipation and tree ring width over each of the last 100 years.  We are observing the tree growth as some function of precipitation.  Some years, the tree width will be greater than expected from the precipiation that year, and some years the tree ring width will be less than expected from the precipitation that year.  The population of interest is the relationship between tree growth and precipitation over the last 2000 years.  We hope that this relationship is similar between the 100 years for which we have data and the 1900 years for which we don't have data.  If this relationship is changing, then our study is doomed; the sampled population over the last 100 years is different than the population over the previou 1900 years.  It is just as if we collected a population survey and missed every immigrant.
+
+It is help to step back from the specifics of the El Malpais tree ring data series, and to to think about the larger picture of where this fits within climate studies.  One purpose of reconstructing historical (paleo) climates is to describe the historical variability of climate, in order to understand the potential variability in future climates.  Suppose, for an instant, that we were able to succeffully reconstruct precipitation over the last 1000 years for the El Malpais region.  We would then have a sample of precipitation spanning 1000 years.  If these 1000 years accurately represented the precipitation over the near future, then we can estimate the expected variability over the next 1000 years.  
+
+Show picture.
+
+- population vs sample
+- 
+
+# Random Variables and Probability Distributions
+
+# What makes statistics for geography different?
+Geographers share one big problem with other scientists studying the natural and social environment.  We can't design *manipulative* experiments; we can't carefully control our experimets to see what happens when we change just one variable.  In my undergraduate chemistry labs, I remember studying how long it took two chemical agents to react, as indicated by a spectacular color change, and where we systematically varied the temperature applied to the experiment with a bunsen burner.  If we had run our experiment carefully, i.e . if carefully washed the equipment between experiments, and carefully measured the same amount of chemicals each time, then we were relatively confident that change in the outcome was created by the change in heat we applied.  Geographers don't have this type of control over the environment.  If we want to study the effect of warming on tree growth, we can't simply heat up the landscape.  More likely, we are going to look for trees in warmer and cooler places and compare their growth.  But how can we be sure that other things aren't different between the warmer and cooler places?  We can try to collect as much data about these places as we can, and to try and account for these other differences as well, but - at the end of the day - the fact remains that we don't fully understand all of the ways in which the environment is different from one place to the next.  These studies are called *observational* studies.  We tend to observe objects in their natural environment, rather than to create that environment in a lab.
+
+
+Another problem with geographic data is that data tend to be *correlated.*  We observe things through time and space.  What is the average temperature where I live?  If I observe the temperature this instant, and then again two minutes from now - well, these aren't exactly independent of each other, are they?  They wouldn't give me a thorough picture of the temperature where I live.  If it is hot right now, chances are that it's going to still be hot in two minutes \footnote{I lived in Chicago for a few years, where the temperature often seemd to swing rapidly...}.  We could collect temperature over a long period, say one year.  But there are longer term climate trends, things like El Nino/La Nina, that might cause one year to not be indicative of all years.  There are perhaps even trends operating at the century or millenial scale, which suggest that I could collect temperature observations my entire life and still not get a perfect grasp of the climate where I live.    The technical term for this is *autocorrelation,* which will be covered in further detail in Chapter 
+
+Another problem for geographers is a tricky, philosophical problem: are we interested in a great understanding of specific places in society, or are we interested in general, geographic trends - in discovering rules that transcend place and/or time, and so can be manipulated by society in beneficial ways.  If we are interested in the first, then replication is not possible, and neither is statistics.  What can we learn from the Russian invasion of South Ossetia?  If the invasion was like other invasions, then perhaps we can learn something general.  But perhaps it is truly indivdual. *... I'm getting in deep water here.  I may not want to.*
+
+
+
+
+

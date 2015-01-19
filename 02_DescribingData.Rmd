@@ -1,0 +1,275 @@
+---
+title: "Chapter 2"
+author: "Nicholas Nagle"
+date: "November 14, 2014"
+output:
+  pdf_document:
+    keep_tex: no
+    template: default2.latex
+    toc: true
+    number_sections: true
+  html_document:
+    keep_md: yes
+header-includes:
+ - \usepackage{todonotes}
+ - \usepackage{mdframed}
+ - \usepackage{soul}
+documentclass: BYUTextbook/BYUTextbook
+---
+
+\newcommand{\hlfix}[2]{\texthl{#1}\todo{#2}}
+
+Data are at the core of scientific inquiry.  Yet, except for the very smallest of datasets, it is not feasible to print out an entire dataset and some condensation is neccesary.  Even when it is possible to print a whole dataset, it is still important to condense the data in ways that help you to communicate a story to your audience.  We summarize our data using effective visuals and **summary statistics** that describe important characteristics of the data.  The most important summaries of a variable usually describe its **location** ("middle") and **spread** (variability).
+
+```{r echo=FALSE, message=FALSE}
+brfss13 <- foreign::read.xport('data/LLCP2013.XPT')
+library(ggplot2)
+library(dplyr)
+```
+# Scales of Measurement
+
+# Describing distributions
+Statistics is about modeling randomness in the population and the sample.  
+Analogues: 
+ - pdf : histogram
+ - parameter : statistic (not really)
+ - expected value : sample mean
+ - variance : sample variance
+
+
+## The histogram
+\personfeature[-1in]{images//220px-Adolphe_Quetelet}{Adolf Quetelet}{1796-1894}{was a Belgian astronomer, sociologist and early statistician.  Astronmers at that time were already using statistics to understand measurement errors and Quetelet considered how these methods might be used in social sciences.  Quetelet collected many measurements about individuals in an effort to develop laws pertaining to social processes such as crime, fertility, and suicide.  Quetelet developed the concept of \emph{l'homme moyen} or "average man" which was quite revolutionary at the time.  Quetelet called these studies "social physics."  Interestingly, August Comte, the father of sociology, also called his non-statistical studies social physics.  Queletet was the better propagandist, however, leading Comte to coin the term \emph{sociologie} to describe his methods.}
+
+  Adolphe Quetelet developed the Body Mass Index (BMI) in the 19th century to measure the relative size of individuals.  In what would today would still be an impressive data collection effort, Queteley collected the BMI along with a host of other measures about people in order to identify what he colled "l'homme moyen," or the "average man."  The BMI is still widely used by docotors and public health officials as a quick indicator of obesity and weight-related health issues.  You can see a  *histogram* of the BMI of American Males in figure \ref{fig:hist1}.  Histograms are one of the most effective visual displays of data.  No other plot can as effectively idicate where the middle and extremes of the data are, where the bulk of the data are, and whether the distribution has a single peak or multiple peaks of likely values.  
+  
+To calculate this histogram the data were sorted into bins that were 2.5 bmi wide.  The height of each bar indicates the frequency (number, count) of data in that bin.  The absolute height of the histogram is not terribly useful, everything would be about twice as high if I collected twice as many data.  But the relative height is tremendously useful. From this histogram, we immediately see that the most common bmi values are around 25 and that most men have a bmi between 15 adn 50, but that there are a few individuals with bmi much greater than 50.  Also, we see that the distribution of bmi in the sample is not symmetric, there are more men with extremely high bmi than men with extremely low bmi.
+
+
+\inlinefig{figures/hist1.pdf}{\label{fig:hist1}Figure}
+
+
+When you make a histogram, the most important decision is to determine the width of each bin.    Figure \ref{fig:hist2} shows two other histograms of the bmi data, with smaller and larger bins than in \ref{fig:hist1}.  The bins in the top plot are too small whereas the bins in the bottom plot are too wide.  There are many spikes and clefts in the top histogram.  Are these real?  Are there really very few men with a bmi 24.5 but a great many men with bmi of 24 and 25?  Probably not.  Such variation in the histogram is commonly a result of  random variation in the sample; if we had a sligtly different sample then the peaks and troughs would be slightly different.  But in this case, these oddities may also be due to systematic measurement errors.  In these data, the bmi was calculated from the self-reported height and weights.  There are a lot of oddities in self-reported weight and height \texthl{(see figure XX)}.  Weights tend to group together in 5 pound bins because people tend to round up or down to the nearest five pounds.  This happens to some extent with height, too.  There are no males that are 5'11".  All 5'11" males are 6 feet.  (What happened to 11?  Can't they count to 11?  Is there some rule that says when you get toward 11 inches, you get to round to the nearest two inches, instead of the nearest inch?  I don't know)
+
+\inlinefig{figures/hist2.pdf}{\label{fig:hist2}The body mass index (BMI) of adult American males.  Source: 2013 Behavioral Risk Factor Surveillance Survey}
+
+
+The second histogram is too coarse.  The bins are large enough that we have eliinated many of the spurious ups and downs in the top plot, but it's not as good as Figure \ref{fig:hist1}.  Compared to \ref{fig:hist1}, it's more difficult to determine with any precision where the most likely values are.  It's not terrible.  But it's not as good.
+
+Determining the right binwidth is part of the art of data analysis.  Like Goldilocks, you must find the display that is "just right" with enough detail to show the important facts, but without so much detail as to show spurious characteristics that don't represent the larger population.  There are no hard and fast rules.  You will just have to experiment a little on your own and ask yourse whether the ups and downs are real or spurious and to use your expert judgement to determine the most effective visualization.
+
+A more technical name for it is the "bias-variance" tradeoff.  When teh histogram uses the large bins, one runs the risk of completely missing important features of the histogram.  This is an example of bias.  When the histogram bins are too small, however, then there is quite a but of spurious noise in the histogram; the spikes and clefts are spurious.  In this case, we probably won't miss any real features, but we might think that there are more features than there really are.  This is an example of variance.  You should be on the watch for bias-variance tradeoffs in statistics and we will come across more examples later.
+
+
+```{r histograms, message=FALSE, echo=FALSE}
+# I want the midpoint of the histogram to be at nice round breakpoints.  So I will construct them by hand.
+
+wd <- .5 # a width of 5
+# Filter on data (complete) and on SEX=1 (Males)
+temp1 <- filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+  mutate(bin_mid = floor(bmi/wd)*wd+ wd/2) %>%
+  group_by(bin_mid) %>%
+  summarize(freq=n(), width=wd)
+
+wd = 2.5
+temp2 <- filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+  mutate(bin_mid = floor(bmi/wd)*wd+ wd/2) %>%
+  group_by(bin_mid) %>%
+  summarize(freq=n(), width=wd)
+
+wd = 10
+temp3 <- filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+  mutate(bin_mid = floor(bmi/wd)*wd+ wd/2) %>%
+  group_by(bin_mid) %>%
+  summarize(freq=n(), width=wd)
+
+ggdat <- rbind(temp1, temp2, temp3)
+
+plt1 <- ggplot(data=filter(ggdat, width!=2.5)) + 
+  geom_bar(aes(x=bin_mid, y=freq, width=width), stat='identity', position='identity') +
+  facet_wrap(~width, ncol=1,scales="free_y") + xlab('bmi')
+
+ggsave('figures/hist1.pdf', plt1)
+
+plt2 <- ggplot(data=filter(ggdat, width==2.5)) + 
+  geom_bar(aes(x=bin_mid, y=freq, width=width), stat='identity', position='identity') +
+  xlab('bmi')
+
+ggsave('figures/hist1.pdf', plt2)
+
+
+```
+
+
+
+## The distribution
+The histogram describee the frequency of each value in a sample.  The population equivalent of the histogram is the *probability distribution.*  Whereas the histogram describes the frequency of particular values in the sample, the probability distribution describes the probability of each value within the population.  For continuous variables such as bmi the probability distribution is also called the *proability density function* (pdf).  Without measuring the bmi for every person in the population we don't actually know what the pdf looks like, but it probably looks like as in \texthl{Figure X}
+
+
+```{r density plot, echo=FALSE, eval=FALSE}
+filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+ggplot() + geom_density(aes(x=bmi), adjust=2)
+
+
+filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+  ggplot() + 
+  geom_density(aes(x=bmi), adjust=2) + 
+  geom_vline(aes(xintercept=median(bmi)))
+
+filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(bmi) %>%
+  ggplot() + 
+  geom_density(aes(x=bmi), adjust=2) + 
+  geom_vline(aes(xintercept=mean(bmi)))
+
+
+
+```
+
+The shape of the pdf has a similar interpretation as the shape of the histogram, it describe which values are more likely.  The acutal height of the pdf is different than the histogram; however.  The height of the histogram measures the count of samples in that bin; the sum of the area of all bins is the sample size $N$.  In contrast, the pdf measures probabilities, and probabilities must sum to one, so the area underneath the pdf is always equal to one.  Nonetheless, it is helpful to think of the histogram as a sample analogue of the probability density.
+
+
+
+
+# Numeric summaries of the data.
+While the histogram is a handy description of the complete distribution of data, it is usually convenient to have more compact, numeric, descriptions of a distribution.  We often use single numbers to characterize the *location* (middle), *spread*, and *shape* of the data.
+
+Sample              | Population
+------------------- | ----------------------
+Mean                | Expected Value
+Median              | 50th Percentile
+Standard Deviation  | Standard Deviation
+
+# Summaries of the location (middle) of the data.
+
+## Sample Mean
+The most common summary of the middle of a distribution is the *sample mean*.  The sample mean is commonly denoted by drawing a bar over the variable's name, such as $\overline{\mbox{bmi}}$ or $\bar{x}$. The sample mean is the sum of the data divided by the number of data:
+$$\bar{x} = \frac{x_1 + x_2 + \ldots + x_N}{N} = \frac{\sum_{i=1}^N x_i}{N}$$
+
+It might help some people to think of the sample mean as the "center of mass" of a dataset.  Suppose that each histogram bar is a weight.  Then the point at which the histogram balances will be the sample mean.  This physical analogy also help to understand the point that sample mean is sensitive to extreme values.  If you take the highest data value, and make it higher, then that is like taking a weight and moving it farther away.  Moving the weight will drag the center of mass.  Similarly, extreme high (or low) values will have great influence on the sample mean. 
+
+## Median
+
+The median is the number that divides the data in half, such that 50 percent of the data are above the median and 50 percent are below.  To find the median, you first sort the data, and then find the data value that is in the middle.  When there are an odd number of data, then there is one unique value in the middle.  When there are an even number of data, however, then the median may not be uniquely designed.  \texthl{Table X } shows the small dataset of ten measurements of body mass index.  Since there are an even number of data, there is no number exactly in the middle.  In fact, for any number between 29.2 and 30.6, you could correctly say that 50 percent of the data are below and 50 percent are above.  By convention, the median is defines as the mean of the middle two numbers.  In this case, the median is $29.9= \frac{29.2+30.6}{2}$.
+
+index | unordered data | ordered data | Percentile
+----- | -------------- | ------------ | ----------
+1     | 30.6   | 21.9 | 0.00
+2     | 21.9 | 24.2 | 11.11
+3 | 27.8 | 25.6 | 22.22
+4 | 34.5 | 27.8 | 33.33
+5 | 32.6 | 29.2 | 44.44
+6 | 35.2 | 30.6 | 55.56
+7 | 24.2 | 32.6 | 66.67
+8 | 25.6 | 34.5 | 77.78
+9 | 41.5 | 35.2 | 88.89
+10 | 29.2 | 41.5 | 100.00
+
+The median is much more resistant to extreme data values than the sample mean is.  If the highest data value is moved to the right, then this will have no effect on the median.
+
+## Mode
+The mode is the data value that occurrs the most frequently.  When there are only a few data values then the mode might be useful. For instance, there are about 105 males born for every 100 females.  If you had to guess the sex of a newborn child, you would be slightly better off guessing "male."  The mode is less valuable for continuous variables, however.  In the simple dataset of 10 bmi values, every value occurs once and there is no unique mode.  
+
+It is possible to use the highest bar as an indicator of the mode, but as we have already seen, the histogram is dependent on the bins size.  If you choose a small bin size, then the highest bin may be affected by random variation.  You can reduce this effect by choosing a wider bin size but you will not be able to determine as precisly where the mode is when you have wide bins.  For all of these reasons the mode not widely used to descrive data.
+
+## Which measure of location to use?
+
+The sample mean is most commonly used.  The sample mean is easy to understand and it corresponds to the Expected Value of a distribution (\texthl{see Section X}).  The sample mean can be effected by extreme values, however.  It is possible for a few values to be so extreme that the same mean is not near the "middle" of the distribution.  In these cases, the median may be more representative of the middle.  For some distrubtions, such as income or housing value, are dominated by a few extreme values.  It is common to report the median rather than the mean for these variables.  
+
+If the median is less effected by extreme values then why not always report the same mean?  One answer is that the median is less reliable in small samples.  When there are no extreme values and the sample size is small, then the mean is a better estimate of the middle than the median is.  In fact, the same properties that make the mean sensitive to extreme values also make the mean a better estimate where there are not extreme values.  The mean is sensitive to slight variations in the data.  This sensitivity is good when there are no extreme values.  The proper satatistical terminology is to say that the mean is more efficient than the mean; the mean makes more efficient use of limited data than the median does.  So it is not possible to say that one measure is always the best.
+
+Some texts report that you should use the sample mean when the data have a normal (Gaussian) distribution (\texthl{see section X}) and the median otherwise, *but we find that this is bad advice*.  The mean is a perfectly fine estimate for any distribution without extreme values, whether Gaussian or not.  And sometimes you really must have an estimate of the Expected Value and not the middle of a distribution, in which case you should use the sample mean regardless of any extreme values.  It is much better to understand the strenghts and weaknesses of each estimator and rely on expert judgement to make a decision.
+
+# Summaries of the spread of a variable.
+
+The middle of the data is often the single most important description of a dataset, but it is generally considered "poor form" in statistics to just report the location.  Uncertainty and variability is a fact of life in data and the resonsible data analyst will not only report the location but will also report a measure of the *spread* of data.  There would be quite a difference between populations with a mean bmi of 25 and a mininimum and maximum of 24 and 26, vs a population with the same mean of 25 but a minimum and maximum of 10 and 100.
+
+
+## The sample variance and standard deviation
+
+For measuring the spread of data it makes sense to think about how far data are from the mean.  If data tend to be very far from the mean then the data have a wide spread.  The most natural measure of distance is simply the difference between a data value and the mean, i.e. $x_i=\bar{x}$.  The sample variance is 
+$$s^2 = \frac{(x_1-\bar{x})^2 + (x_2-\bar{X})^2 + \ldots + (x_N-\bar{x})^s}{N-1} = \frac{\sum_{i=1}^N (x_i - \bar{x})^2}{N-1}
+$$
+
+The sample variance is the average square distance between the data and the mean.  It's not quite the average because the denominator is $N-1$ and not $N$, but it's okay to think of it as an average anyway.  (For the reason behind using $N_1$ instead of $N$ see \texthl{X}).  
+
+The sample variance is measured in data of units squared.  This is an unusual unit.  For the bmi data, the variance of male bmi is: `r filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %$% bmi %>% var()` bmi-squared.  bmi-squared is certainly an unusual unit and one which I am unaccostomed to thinking in.  A much more intuitive measure of spread is the standard deviation $s = \sqrt{s}$.  The standard deviation of male bmi is `r filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %$% bmi %>% var() %>% sqrt()` bmi.  Although it is technically incorrect, *it is okay to think of the standard deviation as the average distance between the data values and the mean*.  \footnote{Technically, the average distance is $\frac{\sum_{i=1}^N |x_i-\bar{X}|}{N}$.}  The standard deviation will usually be slightly larger than the average distance (because squaring the distance gives more weight to extreme data values) but the average distance is probably the closest intuition we have for the standard deviation.  We can think of the bmi as if the average bmi is `r filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %$% bmi %>% mean` and the average person is `r filter(brfss13, SEX==1 & !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %$% bmi %>% sd` above or below the sample mean.
+
+## Percentiles Interquantile Range
+Another 
+
+- Range
+- IQR
+- Coefficient of Variation
+
+
+### The Expected Value
+A useful summary of a population is it's *expected value.*  If it were possible to sample data forever and calculate it's average, then this would be the expected value.  The Expected Value of a random variable $x$ is usually denoted by $\mbox{Exp}[x]$, or by $\mbox{E}[x]$ or by the greek letter $\mu$.
+
+
+# Shape
+## number of peaks
+unimodal vs bimodal vs multimodal
+```{r bimodal, echo=FALSE}
+plt <- ggplot(data=faithful) + geom_histogram(aes(x=waiting), binwidth=4)
+ggsave(plt, filename = 'figures/bimodal.pdf')
+```
+
+\inlinefig{figures/bimodal.pdf}{\label{fig:bimodal}An example of a bimodal distribution}
+
+
+## Symmetry and skewness
+Skewness can be measured, and while older studies often reported it it rarely reported anymore.  Experience has shown that reliably measuring skewness is difficult except with the very largest of sample sizes.
+<!--
+\begin{figure}[!htb]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.3\linewidth, height=0.15\textheight]{images/left_hand}
+        \caption{Negatively Skewed}
+    \end{minipage}%
+    \begin{minipage}{0.5\textwidth}
+        \centering
+        \includegraphics[width=0.3\linewidth, height=0.15\textheight]{images/right_hand}
+        \caption{Positively Skewed}
+    \end{minipage}
+\end{figure}
+-->
+
+# Specific Distributions:
+
+## Bernoulli & Binomial
+
+## Multinomial 
+
+## Gaussian (Normal)
+
+## Poisson
+
+
+## Sampling Distributions:
+There are a few other distributions frequently encountered in statistics called "sampling distributions."  These distributions do not describe the distribution of data, but the distribution of statistics.  These distributions include the $t$, $\chi^2$ (chi-squared, sounds like kye-squared, rhymes with rye-squared) and the $F$, and will be discussed later.
+
+
+
+## Measures of central location
+### The Sample Mean
+
+The most familiar way to summarize a dataset is with the *sample mean*.  The sample mean is calculated as the sum of the individual observations $y_i$, divided by the number of observations *n*, and is denoted by $\bar{y}$:
+$$\bar{y} = \frac{y_1 + y_2 + \ldots + y_n}{n}=\frac{\sum_{i=1}^n y_i}{n}$$
+
+
