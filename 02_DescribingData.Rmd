@@ -4,22 +4,29 @@ author: "Nicholas Nagle"
 date: "November 14, 2014"
 output:
   pdf_document:
-    keep_tex: no
+    keep_tex: yes
     template: default2.latex
     toc: true
     number_sections: true
   html_document:
     keep_md: yes
 header-includes:
+ - \usepackage{mdframed} 
  - \usepackage{todonotes}
- - \usepackage{mdframed}
  - \usepackage{soul}
 documentclass: BYUTextbook/BYUTextbook
 ---
+<!-- 
+- \usepackage{mdframed} 
+ - \usepackage{todonotes}
+ - \usepackage{soul}
+\newcommand{\texthl}[1]{#1}
+\newcommand{\todo}[1]{#1}
+-->
 
 \newcommand{\hlfix}[2]{\texthl{#1}\todo{#2}}
 
-Data are at the core of scientific inquiry.  Yet, except for the very smallest of datasets, it is not feasible to print out an entire dataset and some condensation is neccesary.  Even when it is possible to print a whole dataset, it is still important to condense the data in ways that help you to communicate a story to your audience.  We summarize our data using effective visuals and **summary statistics** that describe important characteristics of the data.  The most important summaries of a variable usually describe its **location** ("middle") and **spread** (variability).
+Except for the very smallest of datasets, it is not feasible to print out an entire dataset and some condensation and simplification is neccesary.  Even when it is possible to print a whole dataset, it is still important to condense the data in ways that help you to communicate a story to your audience.  We summarize our data using effective visuals and **summary statistics** that describe important characteristics of the data.  The most important summaries of a variable usually describe its **location** ("middle") and **spread** (variability).
 
 ```{r echo=FALSE, message=FALSE}
 brfss13 <- foreign::read.xport('data/LLCP2013.XPT')
@@ -29,13 +36,14 @@ library(dplyr)
 # Scales of Measurement
 
 # Describing distributions
-Statistics is about modeling randomness in the population and the sample.  
+\texthl{Statistics is about modeling randomness in the population and the sample.  
 Analogues: 
+
  - pdf : histogram
  - parameter : statistic (not really)
  - expected value : sample mean
  - variance : sample variance
-
+}
 
 ## The histogram
 \personfeature[-1in]{images//220px-Adolphe_Quetelet}{Adolf Quetelet}{1796-1894}{was a Belgian astronomer, sociologist and early statistician.  Astronmers at that time were already using statistics to understand measurement errors and Quetelet considered how these methods might be used in social sciences.  Quetelet collected many measurements about individuals in an effort to develop laws pertaining to social processes such as crime, fertility, and suicide.  Quetelet developed the concept of \emph{l'homme moyen} or "average man" which was quite revolutionary at the time.  Quetelet called these studies "social physics."  Interestingly, August Comte, the father of sociology, also called his non-statistical studies social physics.  Queletet was the better propagandist, however, leading Comte to coin the term \emph{sociologie} to describe his methods.}
@@ -216,10 +224,10 @@ Another
 - IQR
 - Coefficient of Variation
 
-
+<!--
 ### The Expected Value
 A useful summary of a population is it's *expected value.*  If it were possible to sample data forever and calculate it's average, then this would be the expected value.  The Expected Value of a random variable $x$ is usually denoted by $\mbox{Exp}[x]$, or by $\mbox{E}[x]$ or by the greek letter $\mu$.
-
+-->
 
 # Shape
 ## number of peaks
@@ -250,6 +258,17 @@ Skewness can be measured, and while older studies often reported it it rarely re
 \end{figure}
 -->
 
+# Boxplots are useful to comparing multiple distributions
+```{r, echo=FALSE}
+plt <- filter(brfss13, !is.na(X_BMI5)) %>% 
+  mutate(bmi=X_BMI5/100) %>% 
+  select(c(SEX, bmi)) %>%
+  ggplot() + geom_boxplot(aes(y=bmi, x=factor(SEX)))+ scale_x_discrete(name='Sex', labels=c('Male','Female'))
+ggsave(plt, filename = 'figures/bmi_boxplot.pdf')
+```
+\inlinefig{figures/bmi_boxplot.pdf}{\label{fig:boxploe}Boxplots of the bmi distribution for adult Males and Females}
+
+
 # Specific Distributions:
 
 ## Bernoulli & Binomial
@@ -263,13 +282,4 @@ Skewness can be measured, and while older studies often reported it it rarely re
 
 ## Sampling Distributions:
 There are a few other distributions frequently encountered in statistics called "sampling distributions."  These distributions do not describe the distribution of data, but the distribution of statistics.  These distributions include the $t$, $\chi^2$ (chi-squared, sounds like kye-squared, rhymes with rye-squared) and the $F$, and will be discussed later.
-
-
-
-## Measures of central location
-### The Sample Mean
-
-The most familiar way to summarize a dataset is with the *sample mean*.  The sample mean is calculated as the sum of the individual observations $y_i$, divided by the number of observations *n*, and is denoted by $\bar{y}$:
-$$\bar{y} = \frac{y_1 + y_2 + \ldots + y_n}{n}=\frac{\sum_{i=1}^n y_i}{n}$$
-
 

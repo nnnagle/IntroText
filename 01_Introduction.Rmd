@@ -11,6 +11,8 @@ output:
   pdf_document:
     template: default2.latex
     keep_tex: false
+    toc: true
+    number_sections: true
 ---
 
 \newcommand{\hlfix}[2]{\texthl{#1}\todo{#2}}
@@ -23,6 +25,7 @@ How can we learn whether climate change is being affected by humans?  The climat
 
 How do we learn about the world?  This question strikes at the core of what science is.  Our world is messy and complicated and its difficult to know anything for certain.  So how do we slice through this uncertainty and make conclusions?  The answer to this question is crucial to scientific discovery, to responsible policy making, and to better business decisions.    *Statistics* is one way to quantitatively address all the uncertainty in the world.  Statistics is the science and art of learning from data.  For any scientific question, statistics indludes the determination of which data to collect, the design of a study to collect them, how to process and interpret them, and how to communicate our interpretations to the public.
 
+I can't imagine why data science wouldn't be important to everyone.  When you read the newspaper, 
 
 # Population and Sample
 In order to help us think rigorously abot uncertainty, statistics makes an important distinction between population and sample.  Whatever it is that we are studying, the *population* contains *all* of the members of interest.  A *sample* is a subset - a collection - that contains some of the population of interest.  For example, the Behavioral Risk Factor Surveillance System is an survey of health behaviors from an annual sample of approximately 400,000 adults.  The population for this survey is every adult resident of the United States.  A sample is needed because it is impractical to visit every single house in the US year after year.  The Forest Inventory and Analysis (FIA) program is an annual survey administered by the US Forest Service to monitor the health and status of forests in the United States.  The population is every forest and every tree bush and shrub in the United States.  Since it is impractical to visit every tree, the FIA collects data for a sample of small plots scattered throughout the US.
@@ -203,12 +206,14 @@ It is sometimes difficult to determine the proper populatoin of a sample, especi
 
 It is help to step back from the specifics of the El Malpais tree ring data series, and to to think about the larger picture of where this fits within climate studies.  One purpose of reconstructing historical (paleo) climates is to describe the historical variability of climate, in order to understand the potential variability in future climates.  Suppose, for an instant, that we were able to succeffully reconstruct precipitation over the last 1000 years for the El Malpais region.  We would then have a sample of precipitation spanning 1000 years.  If these 1000 years accurately represented the precipitation over the near future, then we can estimate the expected variability over the next 1000 years.  
 
-Show picture.
-
-- population vs sample
-- 
 
 # Random Variables and Probability Distributions
+Variability is a an important concept to statisticians and data analysts.  The world has uncertainty.  I have never seen a geographic process in which scientists could perfectly explain the data value.  There is always some uncertainty.  A **random variable** is any variable whose value is subject to some element of chance or unexplained variability.  For examle, the width of a tree ring is a random variable; while it depends partially on environmental conditions such as precipitation and temperature, we can not perfectly predict tree growth and there is a large element of uncertainty in tree ring width.  Similarly, for a variable such a an individuals income.  While income is related to education, occupation and - unfortunately - gender and race, we can not perfectly predict what income a person has and there remains a significant element of uncertainty in a person's income.  Staticians use probability models to help characterize uncertainty.  A **probability model** is simply a description of all the possible values a random variable can take as well as the probability of each value. 
+
+\begin{figure}[b]
+    \inneralign{\includegraphics[width=7in]{images/PopSample.pdf}}
+    \caption{\label{fig:PopSample}A population of trees.  Each tree has an attribute (tree ring width), whose value can be treated as a random variable from a population distribution.  A researcher will then collect one random sample of trees (different researchers might have collected  a different random sample).  This sample is used to estimate the characteristics of distribution.}
+\end{figure}
 
 # What makes statistics for geography different?
 Geographers share one big problem with other scientists studying the natural and social environment.  We can't design *manipulative* experiments; we can't carefully control our experimets to see what happens when we change just one variable.  In my undergraduate chemistry labs, I remember studying how long it took two chemical agents to react, as indicated by a spectacular color change, and where we systematically varied the temperature applied to the experiment with a bunsen burner.  If we had run our experiment carefully, i.e . if carefully washed the equipment between experiments, and carefully measured the same amount of chemicals each time, then we were relatively confident that change in the outcome was created by the change in heat we applied.  Geographers don't have this type of control over the environment.  If we want to study the effect of warming on tree growth, we can't simply heat up the landscape.  More likely, we are going to look for trees in warmer and cooler places and compare their growth.  But how can we be sure that other things aren't different between the warmer and cooler places?  We can try to collect as much data about these places as we can, and to try and account for these other differences as well, but - at the end of the day - the fact remains that we don't fully understand all of the ways in which the environment is different from one place to the next.  These studies are called *observational* studies.  We tend to observe objects in their natural environment, rather than to create that environment in a lab.
